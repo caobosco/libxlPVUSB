@@ -85,6 +85,16 @@ libxl_nic_type = Enumeration("nic_type", [
     (2, "VIF"),
     ])
 
+libxl_usb_controller_type = Enumeration("usb_controller_type",[
+	(0, "AUTO"),
+	(1, "PV"),
+	(2, "DEVICEMODEL"),
+	])
+
+libxl_usb_type = Enumeration("device_usb_type", [
+    (1, "HOSTDEV"),
+    ])
+
 libxl_action_on_shutdown = Enumeration("action_on_shutdown", [
     (1, "DESTROY"),
 
@@ -448,6 +458,22 @@ libxl_device_pci = Struct("device_pci", [
     ("seize", bool),
     ])
 
+libxl_device_usb_controller = Struct("device_usb_controller", [
+	("name", string),
+	("type", libxl_usb_controller_type),
+	("backend_domid", libxl_domid),
+	("backend_domname",  string),
+	("usb_version", uint8),
+	("num_ports", uint8),
+	])
+
+libxl_device_usb = Struct("device_usb", [
+	("controller_name", string),
+	("type", libxl_usb_type),
+	("bus", uint8),
+	("dev", uint8),
+	]) 
+	 
 libxl_device_vtpm = Struct("device_vtpm", [
     ("backend_domid",    libxl_domid),
     ("backend_domname",  string),
@@ -462,6 +488,7 @@ libxl_domain_config = Struct("domain_config", [
     ("disks", Array(libxl_device_disk, "num_disks")),
     ("nics", Array(libxl_device_nic, "num_nics")),
     ("pcidevs", Array(libxl_device_pci, "num_pcidevs")),
+	("usbs", Array(libxl_device_usb, "num_usbs")),
     ("vfbs", Array(libxl_device_vfb, "num_vfbs")),
     ("vkbs", Array(libxl_device_vkb, "num_vkbs")),
     ("vtpms", Array(libxl_device_vtpm, "num_vtpms")),
