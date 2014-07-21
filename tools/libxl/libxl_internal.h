@@ -1031,6 +1031,11 @@ _hidden int libxl__wait_for_backend(libxl__gc *gc, const char *be_path,
                                     const char *state);
 _hidden int libxl__nic_type(libxl__gc *gc, libxl__device *dev,
                             libxl_nic_type *nictype);
+_hidden int libxl__resolve_domid(libxl__gc *gc, const char *name, 
+                                 uint32_t *domid); _hidden int 
+libxl__domain_usb_init(libxl__gc *gc, xs_transaction_t t,
+                                   char *libxl_path, struct xs_permissions *perm,
+                                   int perm_size);
 
 /*
  * For each aggregate type which can be used as an input we provide:

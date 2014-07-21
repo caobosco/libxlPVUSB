@@ -91,6 +91,12 @@
 #define LIBXL_HAVE_DOMAIN_NODEAFFINITY 1
 
 /*
+ * LIBXL_HAVE_DEVICE_USB indicates the functions for doing hot-plug of
+ * USB devices.
+ */
+#define LIBXL_HAVE_DEVICE_USB 1
+
+/*
  * LIBXL_HAVE_BUILDINFO_HVM_VENDOR_DEVICE indicates that the
  * libxl_vendor_device field is present in the hvm sections of
  * libxl_domain_build_info. This field tells libxl which
@@ -950,32 +956,67 @@ int libxl_cdrom_insert(libxl_ctx *ctx, uint32_t domid, libxl_device_disk *disk,
                        const libxl_asyncop_how *ao_how)
                        LIBXL_EXTERNAL_CALLERS_ONLY;
 
-/* USB Devices*/
-int libxl_device_usb_controller_create(libxl_ctxlibxl_ctx *ctx, uint32_t domid,
-						 libxl_device_usb_controller *dev,
+/* USB Controllers*/
+int libxl_device_usbctrl_add(libxl_ctx *ctx, uint32_t domid,
+                         libxl_device_usbctrl *usbctrl,
                          const libxl_asyncop_how *ao_how)
                          LIBXL_EXTERNAL_CALLERS_ONLY;
 
-int libxl_device_usb_controller_destroy(libxl_ctxlibxl_ctx *ctx, uint32_t domid,
-                         libxl_device_usb_controller *dev,
+int libxl_device_usbctrl_remove(libxl_ctx *ctx, uint32_t domid,
+                         libxl_device_usbctrl *usbctrl,
                          const libxl_asyncop_how *ao_how)
                          LIBXL_EXTERNAL_CALLERS_ONLY;
 
-int libxl_device_usb_add(libxl_ctx *ctx, uint32_t domid,
-                         libxl_device_usb *dev,
+int libxl_device_usbctrl_destroy(libxl_ctx *ctx, uint32_t domid,
+                         libxl_device_usbctrl *usbctrl,
                          const libxl_asyncop_how *ao_how)
                          LIBXL_EXTERNAL_CALLERS_ONLY;
 
-int libxl_device_usb_remove(libxl_ctx *ctx, uint32_t domid,
-                            libxl_device_usb *dev,
+libxl_device_usbctrl *libxl_device_usbctrl_list(libxl_ctx *ctx,
+                            uint32_t domid, int *num)
+                            LIBXL_EXTERNAL_CALLERS_ONLY;
+
+int libxl_devid_to_device_usbctrl(libxl_ctx *ctx, uint32_t domid, 
+                            int devid, libxl_device_usbctrl *usbctrl)
+                            LIBXL_EXTERNAL_CALLERS_ONLY;
+
+int libxl_device_usbctrl_getinfo(libxl_ctx *ctx, uint32_t domid,
+                                libxl_device_usbctrl *usbctrl,
+                                libxl_usbctrlinfo *usbctrlinfo)
+                                LIBXL_EXTERNAL_CALLERS_ONLY;
+
+/* USB Devices */
+int libxl_device_usb_add(libxl_ctx *ctx, uint32_t domid, libxl_device_usb *usb,
+                         const libxl_asyncop_how *ao_how)
+                         LIBXL_EXTERNAL_CALLERS_ONLY;
+
+int libxl_device_usb_remove(libxl_ctx *ctx, uint32_t domid, libxl_device_usb *usb,
+                            const libxl_asyncop_how *ao_how)
+                            LIBXL_EXTERNAL_CALLERS_ONLY;
+
+int libxl_device_usb_destroy(libxl_ctx *ctx, uint32_t domid, libxl_device_usb *usb,
                             const libxl_asyncop_how *ao_how)
                             LIBXL_EXTERNAL_CALLERS_ONLY;
 
 libxl_device_usb *libxl_device_usb_list(libxl_ctx *ctx, uint32_t domid,
                                         int *num)
-                          LIBXL_EXTERNAL_CALLERS_ONLY;
+                            LIBXL_EXTERNAL_CALLERS_ONLY;
 
+int libxl_devid_to_device_usb(libxl_ctx *ctx, uint32_t domid,
+                               int devid, libxl_device_usb *usb)
+                            LIBXL_EXTERNAL_CALLERS_ONLY;
 
+int libxl_hostdev_to_device_usb(libxl_ctx *ctx, uint32_t domid,
+                            int devid, libxl_device_usb *usb)
+                            LIBXL_EXTERNAL_CALLERS_ONLY;
+
+int libxl_intf_to_device_usb(libxl_ctx *ctx, uint32_t domid,
+                            char *intf, libxl_device_usb *usb)
+                            LIBXL_EXTERNAL_CALLERS_ONLY;
+
+int libxl_device_usb_getinfo(libxl_ctx *ctx, uint32_t domid,
+                          libxl_device_usbctrl *usbctrl, libxl_usbinfo *usbinfo)
+                             LIBXL_EXTERNAL_CALLERS_ONLY;
 /* Network Interfaces */
 int libxl_device_nic_add(libxl_ctx *ctx, uint32_t domid, libxl_device_nic *nic,
                          const libxl_asyncop_how *ao_how)

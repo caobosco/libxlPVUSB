@@ -2734,6 +2734,277 @@ int main_cd_insert(int argc, char **argv)
     return 0;
 }
 
+// use lsusb in the os to get assignable devices
+static void usb_assignable_list(void)
+{
+    
+}
+
+int main_usbassignable_list(int argc, char **argv)
+{
+    int opt;
+    
+    SWITCH_FOREACH_OPT(opt, "", NULL, "usb-assignable-list", 0) {
+        /* No options */
+    }
+    
+    usb_assignable_list();
+    return 0;   
+}
+
+//read xenstore
+static void usb_assigned_list(void)
+{
+    /*
+    libxl_device_usb *usbdevs;
+    int num, i;
+    usbdevs = libxl_device_usb_assigned_list(ctx, &num);
+    
+    if ( usbdevs == NULL)
+        return;
+    for (i = 0; i < num; i++) {
+        printf("");
+        //libxl_device_usb_dispose(&usbdevs[i]);
+    }
+    free(usbdevs);
+    */
+}
+
+
+int main_usbassigned_list(int argc, char **argv)
+{
+    int opt;
+    SWITCH_FOREACH_OPT(opt, "", NULL, "usb-assignable-list", 0) {
+        /* No options */
+    }
+    
+    usb_assigned_list();
+    return 0;
+}
+
+//xenstore
+int main_usbctrl_attach(int argc, char **argv)
+{
+    uint32_t domid;
+    int opt;
+    char *oparg;
+    libxl_device_usbctrl usbctrl;
+    
+    SWITCH_FOREACH_OPT(opt, "", NULL, "usb-controller-attach", 2) {
+        /* No options */
+    }
+    
+    domid = find_domain(argv[optind]);
+    
+    libxl_device_usbctrl_init(&usbctrl);
+    
+    //parse parameters
+    for (argv += optind, argc -= optind; argc > 0; ++argv, --argc) {
+        if (MATCH_OPTION("name", *argv, oparg)) {
+            replace_string(&usbctrl.name, oparg);
+        } else if (MATCH_OPTION("type",  *argv, oparg)) {
+            if (!strcmp("pv", oparg)) {
+                usbctrl.type = LIBXL_USBCTRL_TYPE_PV;
+            } else if(!strcmp("ioemu", oparg)) {
+                usbctrl.type = LIBXL_USBCTRL_TYPE_DEVICEMODEL;
+            } else {
+                fprintf(stderr, "Invalid parameter `type'.\n");
+                return 1;
+            }
+        } else if (MATCH_OPTION("version", *argv, oparg)) {
+            //how to convert string to uint_8??
+            usbctrl.usb_version = atoi(oparg);
+        } else if (MATCH_OPTION("num_ports", *argv, oparg)) {
+            usbctrl.num_ports = atoi(oparg);
+        }  else {
+            fprintf(stderr, "unrecognized argument `%s'\n", *argv);
+            return 1;
+        }
+    }
+
+    if(dryrun_only) {
+       char* json = libxl_device_usbctrl_to_json(ctx, &usbctrl);
+       printf("usb controller: %s\n", json);
+       free(json);
+       libxl_device_usbctrl_dispose(&usbctrl);
+       if (ferror(stdout) || fflush(stdout)) { perror("stdout"); exit(-1); }
+       return 0;
+    }
+    
+    if(libxl_device_usbctrl_add(ctx, domid, &usbctrl, 0)) {
+        fprintf(stderr, "libxl_device_usbctrl_add failed.\n");
+        return 1;
+    }
+    libxl_device_usbctrl_dispose(&usbctrl);
+    return 0; 
+}
+
+int main_usbctrl_detach(int argc, char **argv)
+{
+    uint32_t domid;
+    int opt;
+    libxl_device_usbctrl usbctrl;
+
+    SWITCH_FOREACH_OPT(opt, "", NULL, "usb-controller-dettach", 2) {
+        /* No options */
+    }
+
+    domid = find_domain(argv[optind]);
+
+    libxl_device_usbctrl_init(&usbctrl);
+
+    //parse parameters
+    if (libxl_devid_to_device_usbctrl(ctx, domid, atoi(argv[optind+1]), &usbctrl)) {
+        fprintf(stderr, "Unknown device %s.\n", argv[optind+1]);
+        return 1;
+    }
+
+    if(libxl_device_usbctrl_remove(ctx, domid, &usbctrl, 0)) {
+        fprintf(stderr, "libxl_device_usbctrl_add failed.\n");
+        return 1;
+    }
+    libxl_device_usbctrl_dispose(&usbctrl);
+    return 0;
+    
+}
+
+int main_usbattach(int argc, char **argv)
+{
+    uint32_t domid;
+    int opt;
+    char *oparg;
+    libxl_device_usb usb;
+    
+    SWITCH_FOREACH_OPT(opt, "", NULL, "usb-attach", 1) {
+        /* No options */
+    }
+    domid = find_domain(argv[optind]);
+
+    libxl_device_usb_init(&usb);
+    
+    //parse the parameters
+    for (argv += optind, argc -= optind; argc > 0; ++argv, --argc) {
+        if (MATCH_OPTION("controller", *argv, oparg)) {
+            usb.ctrl = atoi(oparg);
+        } else if (MATCH_OPTION("hostdev", *argv, oparg)) {
+            //how to convert????
+            //replace_string(&usb.hostdev, oparg);
+        } else if (MATCH_OPTION("intf", *argv, oparg)) {
+            replace_string(&usb.intf, oparg);
+        } else if (MATCH_OPTION("port", *argv, oparg)) {
+            usb.port = atoi(oparg);
+        } else {
+            fprintf(stderr, "unrecognized argument `%s'\n", *argv);
+            return 1;
+        }
+
+    }
+
+    if (dryrun_only) {
+        char *json = libxl_device_usb_to_json(ctx, &usb);
+        printf("usb: %s\n", json);
+        free(json);
+        libxl_device_usb_dispose(&usb);
+        if (ferror(stdout) || fflush(stdout)) { perror("stdout"); exit(-1); }
+        return 0;
+    }
+    
+    if(libxl_device_usb_add(ctx, domid, &usb, 0)) {
+        fprintf(stderr, "libxl_device_usb_add failed.\n");
+        return 1;
+    }
+    
+    libxl_device_usb_dispose(&usb);
+    return 0;
+}
+
+int main_usbdetach(int argc, char **argv)
+{
+    uint32_t domid;
+    int opt;
+    libxl_device_usb usb;
+    
+    SWITCH_FOREACH_OPT(opt, "", NULL, "usb-detach", 2) {
+        /* No options */
+    }
+
+    domid = find_domain(argv[optind]);
+
+    //parse parameters
+    if (!strchr(argv[optind+1], '-')) {
+        if (libxl_hostdev_to_device_usb(ctx, domid, atoi(argv[optind+1]), &usb)) {
+            fprintf(stderr, "Unknown device %s.\n", argv[optind+1]);
+            return 1;
+        }
+    } else {
+        if (libxl_intf_to_device_usb(ctx, domid, argv[optind+1], &usb)) {
+            fprintf(stderr, "Unknown device %s.\n", argv[optind+1]);
+            return 1;
+        }
+    }
+
+    if(libxl_device_usb_remove(ctx, domid, &usb, 0)) {
+        fprintf(stderr, "libxl_device_usb_remove failed.\n");
+        return 1;
+    }
+    libxl_device_usb_dispose(&usb);
+    return 0;
+}
+
+//xenstore
+int main_usblist(int argc, char **argv)
+{
+    uint32_t domid;
+    libxl_device_usbctrl *usbctrls;
+    libxl_usbctrlinfo usbctrlinfo;
+    //TO_DO
+    //libxl_device_usb usb;
+    libxl_usbinfo usbinfo;
+    int nb, i, j, opt;
+
+    SWITCH_FOREACH_OPT(opt, "", NULL, "usb-list", 1) {
+        /* No options */
+    }
+
+    //processing for each domid
+    for (argv += optind, argc -= optind; argc > 0; --argc, ++argv) {
+        domid = find_domain(*argv);
+        usbctrls = libxl_device_usbctrl_list(ctx, domid, &nb);
+        if (!usbctrls) {
+            continue;
+        }
+        for (i = 0; i < nb; ++i) {
+            /* Idx  name BE state usb-ver BE-path */ 
+            printf("%-3s %-4s %-3s %-5s %-7s  %-30s",
+                    "Idx", "name", "BE", "state", "usb-ver", "BE-path");
+    
+            if (!libxl_device_usbctrl_getinfo(ctx, domid, 
+                                    &usbctrls[i], &usbctrlinfo)) {
+                /* */
+                printf("%-3d %-4s %-3d %-5d %-7d %-30s",
+                        i, usbctrlinfo.name, usbctrlinfo.backend_id,
+                        usbctrlinfo.state, usbctrlinfo.version,
+                        usbctrlinfo.backend );
+                // waste memory, need improvement
+                for(j = 0; j < usbctrlinfo.num_ports; ++j) {
+                    /* */
+                    if (!libxl_device_usb_getinfo(ctx, domid, 
+                                        &usbctrls[i], &usbinfo)) {
+                        printf("port %d: %d %d %d:%d %s %s\n", j, 
+                            usbinfo.bus,usbinfo.dev, usbinfo.idVendor, 
+                            usbinfo.idProd, usbinfo.manuf, usbinfo.prod);
+                    }
+                }
+                libxl_usbinfo_dispose(&usbinfo);
+                libxl_usbctrlinfo_dispose(&usbctrlinfo);
+            }
+            libxl_device_usbctrl_dispose(&usbctrls[i]); 
+        }
+        free(usbctrls);
+    }
+    return 0;
+}
+
 int main_console(int argc, char **argv)
 {
     uint32_t domid;

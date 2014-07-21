@@ -1776,7 +1776,7 @@ static int libxl__device_nextid(libxl__gc *gc, uint32_t domid, char *device)
     return nextid;
 }
 
-static int libxl__resolve_domid(libxl__gc *gc, const char *name,
+int libxl__resolve_domid(libxl__gc *gc, const char *name,
                                 uint32_t *domid)
 {
     if (!name)

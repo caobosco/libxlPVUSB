@@ -85,11 +85,11 @@ libxl_nic_type = Enumeration("nic_type", [
     (2, "VIF"),
     ])
 
-libxl_usb_controller_type = Enumeration("usb_controller_type",[
-	(0, "AUTO"),
-	(1, "PV"),
-	(2, "DEVICEMODEL"),
-	])
+libxl_usbctrl_type = Enumeration("usbctrl_type",[
+    (0, "AUTO"),
+    (1, "PV"),
+    (2, "DEVICEMODEL"),
+    ])
 
 libxl_usb_type = Enumeration("device_usb_type", [
     (1, "HOSTDEV"),
@@ -340,7 +340,7 @@ libxl_domain_build_info = Struct("domain_build_info",[
     ("ioports",          Array(libxl_ioport_range, "num_ioports")),
     ("irqs",             Array(uint32, "num_irqs")),
     ("iomem",            Array(libxl_iomem_range, "num_iomem")),
-    ("claim_mode",	     libxl_defbool),
+    ("claim_mode",       libxl_defbool),
     ("event_channels",   uint32),
     ("u", KeyedUnion(None, libxl_domain_type, "type",
                 [("hvm", Struct(None, [("firmware",         string),
@@ -458,22 +458,27 @@ libxl_device_pci = Struct("device_pci", [
     ("seize", bool),
     ])
 
-libxl_device_usb_controller = Struct("device_usb_controller", [
-	("name", string),
-	("type", libxl_usb_controller_type),
-	("backend_domid", libxl_domid),
-	("backend_domname",  string),
-	("usb_version", uint8),
-	("num_ports", uint8),
-	])
+libxl_device_usbctrl = Struct("device_usbctrl", [
+    ("name", string),
+    ("type", libxl_usbctrl_type),
+    ("backend_domid", libxl_domid),
+    ("backend_domname", string),
+    ("devid", libxl_devid),
+    ("usb_version", uint8),
+    ("num_ports", uint8),
+    ])
 
 libxl_device_usb = Struct("device_usb", [
-	("controller_name", string),
-	("type", libxl_usb_type),
-	("bus", uint8),
-	("dev", uint8),
-	]) 
-	 
+    ("ctrl", integer),
+    ("port", integer),
+    ("intf", string),
+    ("u", KeyedUnion(None, libxl_usb_type, "type",
+        [("hostdev", Struct(None, [
+            ("hostbus",   integer),
+            ("hostaddr",  integer) ]))
+        ]))
+    ]) 
+     
 libxl_device_vtpm = Struct("device_vtpm", [
     ("backend_domid",    libxl_domid),
     ("backend_domname",  string),
@@ -488,7 +493,7 @@ libxl_domain_config = Struct("domain_config", [
     ("disks", Array(libxl_device_disk, "num_disks")),
     ("nics", Array(libxl_device_nic, "num_nics")),
     ("pcidevs", Array(libxl_device_pci, "num_pcidevs")),
-	("usbs", Array(libxl_device_usb, "num_usbs")),
+    ("usbs", Array(libxl_device_usb, "num_usbs")),
     ("vfbs", Array(libxl_device_vfb, "num_vfbs")),
     ("vkbs", Array(libxl_device_vkb, "num_vkbs")),
     ("vtpms", Array(libxl_device_vtpm, "num_vtpms")),
@@ -532,6 +537,28 @@ libxl_vtpminfo = Struct("vtpminfo", [
     ("evtch", integer),
     ("rref", integer),
     ("uuid", libxl_uuid),
+    ], dir=DIR_OUT)
+
+libxl_usbctrlinfo = Struct("usbctrlinfo", [
+    ("backend", string),
+    ("backend_id", uint32),
+    ("frontend", string),
+    ("frontend_id", uint32),
+    ("devid", libxl_devid),
+    ("state", integer),
+    ("evtch", integer),
+    ("version", integer),
+    ("name", string),
+    ("num_ports", integer),
+    ], dir=DIR_OUT)
+
+libxl_usbinfo = Struct("usbinfo", [
+    ("bus", integer),
+    ("dev", integer),
+    ("idVendor", integer),
+    ("idProd", integer),
+    ("prod", string),
+    ("manuf", string),
     ], dir=DIR_OUT)
 
 libxl_vcpuinfo = Struct("vcpuinfo", [
