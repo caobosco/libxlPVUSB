@@ -548,7 +548,9 @@ libxl_usbctrlinfo = Struct("usbctrlinfo", [
     ("state", integer),
     ("evtch", integer),
     ("version", integer),
-    ("name", string),
+    ("type", libxl_usbctrl_type),
+    ("ref_urb", integer),
+    ("ref_conn", integer),
     ("num_ports", integer),
     ], dir=DIR_OUT)
 

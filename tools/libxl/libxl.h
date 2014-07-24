@@ -999,8 +999,7 @@ int libxl_device_usb_destroy(libxl_ctx *ctx, uint32_t domid, libxl_device_usb *u
                             LIBXL_EXTERNAL_CALLERS_ONLY;
 
 libxl_device_usb *libxl_device_usb_list(libxl_ctx *ctx, uint32_t domid,
-                                        int *num)
-                            LIBXL_EXTERNAL_CALLERS_ONLY;
+                                        int *num);
 
 int libxl_devid_to_device_usb(libxl_ctx *ctx, uint32_t domid,
                                int devid, libxl_device_usb *usb)
@@ -1131,6 +1130,10 @@ int libxl_device_events_handler(libxl_ctx *ctx,
 int libxl_device_pci_assignable_add(libxl_ctx *ctx, libxl_device_pci *pcidev, int rebind);
 int libxl_device_pci_assignable_remove(libxl_ctx *ctx, libxl_device_pci *pcidev, int rebind);
 libxl_device_pci *libxl_device_pci_assignable_list(libxl_ctx *ctx, int *num);
+
+int libxl_device_usb_assignable_add(libxl_ctx *ctx, libxl_device_usb *usb, int rebind);
+int libxl_device_usb_assignable_remove(libxl_ctx *ctx, libxl_device_usb *usb, int rebind);
+libxl_device_usb *libxl_device_usb_assignable_list(libxl_ctx *ctx, int *num);
 
 /* CPUID handling */
 int libxl_cpuid_parse_config(libxl_cpuid_policy_list *cpuid, const char* str);

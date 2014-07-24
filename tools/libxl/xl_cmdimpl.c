@@ -2790,7 +2790,7 @@ int main_usbctrl_attach(int argc, char **argv)
     char *oparg;
     libxl_device_usbctrl usbctrl;
     
-    SWITCH_FOREACH_OPT(opt, "", NULL, "usb-controller-attach", 2) {
+    SWITCH_FOREACH_OPT(opt, "", NULL, "usb-controller-attach", 1) {
         /* No options */
     }
     
@@ -2799,7 +2799,7 @@ int main_usbctrl_attach(int argc, char **argv)
     libxl_device_usbctrl_init(&usbctrl);
     
     //parse parameters
-    for (argv += optind, argc -= optind; argc > 0; ++argv, --argc) {
+    for (argv += optind+1, argc -= optind+1; argc > 0; ++argv, --argc) {
         if (MATCH_OPTION("name", *argv, oparg)) {
             replace_string(&usbctrl.name, oparg);
         } else if (MATCH_OPTION("type",  *argv, oparg)) {
@@ -2959,7 +2959,7 @@ int main_usblist(int argc, char **argv)
     libxl_usbctrlinfo usbctrlinfo;
     //TO_DO
     //libxl_device_usb usb;
-    libxl_usbinfo usbinfo;
+    //libxl_usbinfo usbinfo;
     int nb, i, j, opt;
 
     SWITCH_FOREACH_OPT(opt, "", NULL, "usb-list", 1) {
@@ -2975,27 +2975,28 @@ int main_usblist(int argc, char **argv)
         }
         for (i = 0; i < nb; ++i) {
             /* Idx  name BE state usb-ver BE-path */ 
-            printf("%-3s %-4s %-3s %-5s %-7s  %-30s",
+            printf("%-3s %-4s %-3s %-5s %-7s  %-30s\n",
                     "Idx", "name", "BE", "state", "usb-ver", "BE-path");
     
             if (!libxl_device_usbctrl_getinfo(ctx, domid, 
                                     &usbctrls[i], &usbctrlinfo)) {
                 /* */
-                printf("%-3d %-4s %-3d %-5d %-7d %-30s",
-                        i, usbctrlinfo.name, usbctrlinfo.backend_id,
+                printf("%-3d %-3d %-5d %-7d %-30s\n",
+                        i, usbctrlinfo.backend_id,
                         usbctrlinfo.state, usbctrlinfo.version,
                         usbctrlinfo.backend );
                 // waste memory, need improvement
                 for(j = 0; j < usbctrlinfo.num_ports; ++j) {
-                    /* */
+                    /* 
                     if (!libxl_device_usb_getinfo(ctx, domid, 
                                         &usbctrls[i], &usbinfo)) {
                         printf("port %d: %d %d %d:%d %s %s\n", j, 
                             usbinfo.bus,usbinfo.dev, usbinfo.idVendor, 
                             usbinfo.idProd, usbinfo.manuf, usbinfo.prod);
                     }
+                    libxl_usbinfo_dispose(&usbinfo);
+                    */
                 }
-                libxl_usbinfo_dispose(&usbinfo);
                 libxl_usbctrlinfo_dispose(&usbctrlinfo);
             }
             libxl_device_usbctrl_dispose(&usbctrls[i]); 

@@ -1734,7 +1734,7 @@ out:
 /******************************************************************************/
 
 /* generic callback for devices that only need to set ao_complete */
-static void device_addrm_aocomplete(libxl__egc *egc, libxl__ao_device *aodev)
+void device_addrm_aocomplete(libxl__egc *egc, libxl__ao_device *aodev)
 {
     STATE_AO_GC(aodev->ao);
 
@@ -1757,7 +1757,7 @@ out:
 }
 
 /* common function to get next device id */
-static int libxl__device_nextid(libxl__gc *gc, uint32_t domid, char *device)
+int libxl__device_nextid(libxl__gc *gc, uint32_t domid, char *device)
 {
     char *dompath, **l;
     unsigned int nb;

@@ -1031,9 +1031,10 @@ _hidden int libxl__wait_for_backend(libxl__gc *gc, const char *be_path,
                                     const char *state);
 _hidden int libxl__nic_type(libxl__gc *gc, libxl__device *dev,
                             libxl_nic_type *nictype);
+_hidden int libxl__device_nextid(libxl__gc *gc, uint32_t domid, char *device);
 _hidden int libxl__resolve_domid(libxl__gc *gc, const char *name, 
-                                 uint32_t *domid); _hidden int 
-libxl__domain_usb_init(libxl__gc *gc, xs_transaction_t t,
+                                 uint32_t *domid); 
+_hidden int libxl__domain_usb_init(libxl__gc *gc, xs_transaction_t t,
                                    char *libxl_path, struct xs_permissions *perm,
                                    int perm_size);
 
@@ -1061,6 +1062,10 @@ _hidden int libxl__device_vtpm_setdefault(libxl__gc *gc, libxl_device_vtpm *vtpm
 _hidden int libxl__device_vfb_setdefault(libxl__gc *gc, libxl_device_vfb *vfb);
 _hidden int libxl__device_vkb_setdefault(libxl__gc *gc, libxl_device_vkb *vkb);
 _hidden int libxl__device_pci_setdefault(libxl__gc *gc, libxl_device_pci *pci);
+_hidden int libxl__device_usbctrl_setdefault(libxl__gc *gc, 
+                                    libxl_device_usbctrl *usbctrl, uint32_t domid);
+_hidden int libxl__device_usb_setdefault(libxl__gc *gc, libxl_device_usb *usb,
+                                         uint32_t domid);
 
 _hidden const char *libxl__device_nic_devname(libxl__gc *gc,
                                               uint32_t domid,
@@ -2152,6 +2157,8 @@ struct libxl__ao_device {
 
 /* Starts preparing to add/remove a bunch of devices. */
 _hidden void libxl__multidev_begin(libxl__ao *ao, libxl__multidev*);
+/* generic callback for devices that only need to set ao_complete */
+_hidden void device_addrm_aocomplete(libxl__egc *egc, libxl__ao_device *aodev);
 
 /* Prepares to add/remove one of many devices.  Returns a libxl__ao_device
  * which has had libxl__prepare_ao_device called, and which has also
@@ -2270,6 +2277,12 @@ _hidden void libxl__device_nic_add(libxl__egc *egc, uint32_t domid,
 _hidden void libxl__device_vtpm_add(libxl__egc *egc, uint32_t domid,
                                    libxl_device_vtpm *vtpm,
                                    libxl__ao_device *aodev);
+
+/* from libxl_usb */
+_hidden int libxl__device_usbctrl_add(libxl__egc *egc, uint32_t domid,
+                            libxl_device_usbctrl *usbctrl, libxl__ao_device *aodev);
+_hidden int libxl__device_usb_add(libxl__gc *gc, uint32_t domid, libxl_device_usb *usb);
+_hidden int libxl__device_usb_destroy_all(libxl__gc *gc, uint32_t domid);
 
 /* Internal function to connect a vkb device */
 _hidden int libxl__device_vkb_add(libxl__gc *gc, uint32_t domid,
