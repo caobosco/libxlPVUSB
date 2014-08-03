@@ -207,7 +207,7 @@ struct cmd_spec cmd_table[] = {
 	  "Create a virtual USB controller for a domain",
 	  "<Domain> [version=<version>] [numberOfPorts=<number>] [type=<type>]",
 	},
-	{ "usb-controller-destroy",
+	{ "usb-controller-detach",
 	  &main_usbctrl_detach, 0, 1,
 	  "Destory the virtual USB controller specified by <ControllerName> for a domain",
 	  "<Domain> <DevId|ControllerName['pv0'|'hci0'|..]>",

@@ -2734,10 +2734,36 @@ int main_cd_insert(int argc, char **argv)
     return 0;
 }
 
-// use lsusb in the os to get assignable devices
+static void usbinfo_print(libxl_device_usb *usbs, int num) {
+    int i;
+    if ( usbs == NULL )
+         return;
+    libxl_usbinfo usbinfo;
+    for (i = 0; i < num; i++) {
+        //TO BE Improved 
+        if (usbs[i].port )
+            printf("Port %d:", usbs[i].port);
+        printf("Interface %8s ", usbs[i].intf);
+        if (!libxl_device_usb_getinfo(ctx, usbs[i].intf, &usbinfo)) {
+            printf("Bus %03d Dev %03d: %04d:%04d %s %s\n",
+                    usbinfo.bus, usbinfo.devnum, usbinfo.idVendor,
+                    usbinfo.idProduct, usbinfo.manuf, usbinfo.prod);
+        }
+        libxl_usbinfo_dispose(&usbinfo);
+    }
+} 
+
+
 static void usb_assignable_list(void)
 {
+    libxl_device_usb *usbs;
+    int num;
+
+    usbs = libxl_device_usb_assignable_list(ctx, &num);
     
+    usbinfo_print(usbs, num);
+
+    free(usbs);
 }
 
 int main_usbassignable_list(int argc, char **argv)
@@ -2755,21 +2781,15 @@ int main_usbassignable_list(int argc, char **argv)
 //read xenstore
 static void usb_assigned_list(void)
 {
-    /*
-    libxl_device_usb *usbdevs;
-    int num, i;
-    usbdevs = libxl_device_usb_assigned_list(ctx, &num);
+    libxl_device_usb *usbs;
+    int num;
+    usbs = libxl_device_usb_assigned_list(ctx, &num);
     
-    if ( usbdevs == NULL)
-        return;
-    for (i = 0; i < num; i++) {
-        printf("");
-        //libxl_device_usb_dispose(&usbdevs[i]);
-    }
-    free(usbdevs);
-    */
+    usbinfo_print(usbs, num);
+        // usbs[i] changed, why !!!???
+        //libxl_device_usb_dispose(&usbs[i]);
+    free(usbs);
 }
-
 
 int main_usbassigned_list(int argc, char **argv)
 {
@@ -2882,8 +2902,11 @@ int main_usbattach(int argc, char **argv)
 
     libxl_device_usb_init(&usb);
     
+    //indicate that no ctrl, port are specified 
+    usb.ctrl = -1, usb.port = -1;
+
     //parse the parameters
-    for (argv += optind, argc -= optind; argc > 0; ++argv, --argc) {
+    for (argv += optind+1, argc -= optind+1; argc > 0; ++argv, --argc) {
         if (MATCH_OPTION("controller", *argv, oparg)) {
             usb.ctrl = atoi(oparg);
         } else if (MATCH_OPTION("hostdev", *argv, oparg)) {
@@ -2923,6 +2946,7 @@ int main_usbdetach(int argc, char **argv)
     uint32_t domid;
     int opt;
     libxl_device_usb usb;
+    char *oparg;
     
     SWITCH_FOREACH_OPT(opt, "", NULL, "usb-detach", 2) {
         /* No options */
@@ -2930,18 +2954,35 @@ int main_usbdetach(int argc, char **argv)
 
     domid = find_domain(argv[optind]);
 
-    //parse parameters
-    if (!strchr(argv[optind+1], '-')) {
+    libxl_device_usb_init(&usb);
+
+    //parse the parameters
+    for (argv += optind+1, argc -= optind+1; argc > 0; ++argv, --argc) {
+        if (MATCH_OPTION("controller", *argv, oparg)) {
+            usb.ctrl = atoi(oparg);
+        } else if (MATCH_OPTION("intf", *argv, oparg)) {
+            replace_string(&usb.intf, oparg);
+        } else if (MATCH_OPTION("port", *argv, oparg)) {
+            usb.port = atoi(oparg);
+        } else {
+            fprintf(stderr, "unrecognized argument `%s'\n", *argv);
+            return 1;
+        }
+    }
+/*
+    if (strchr(argv[optind+1], '-')) {
         if (libxl_hostdev_to_device_usb(ctx, domid, atoi(argv[optind+1]), &usb)) {
             fprintf(stderr, "Unknown device %s.\n", argv[optind+1]);
             return 1;
         }
     } else {
         if (libxl_intf_to_device_usb(ctx, domid, argv[optind+1], &usb)) {
-            fprintf(stderr, "Unknown device %s.\n", argv[optind+1]);
+           fprintf(stderr, "Unknown device %s.\n", argv[optind+1]);
             return 1;
         }
     }
+*/
+    libxl_intf_to_device_usb(ctx, domid,usb.intf, &usb);
 
     if(libxl_device_usb_remove(ctx, domid, &usb, 0)) {
         fprintf(stderr, "libxl_device_usb_remove failed.\n");
@@ -2956,11 +2997,9 @@ int main_usblist(int argc, char **argv)
 {
     uint32_t domid;
     libxl_device_usbctrl *usbctrls;
+    libxl_device_usb *usbs;
     libxl_usbctrlinfo usbctrlinfo;
-    //TO_DO
-    //libxl_device_usb usb;
-    //libxl_usbinfo usbinfo;
-    int nb, i, j, opt;
+    int numctrl, numusb, i, opt;
 
     SWITCH_FOREACH_OPT(opt, "", NULL, "usb-list", 1) {
         /* No options */
@@ -2969,34 +3008,26 @@ int main_usblist(int argc, char **argv)
     //processing for each domid
     for (argv += optind, argc -= optind; argc > 0; --argc, ++argv) {
         domid = find_domain(*argv);
-        usbctrls = libxl_device_usbctrl_list(ctx, domid, &nb);
+        usbctrls = libxl_device_usbctrl_list(ctx, domid, &numctrl);
         if (!usbctrls) {
             continue;
         }
-        for (i = 0; i < nb; ++i) {
+        for (i = 0; i < numctrl; ++i) {
             /* Idx  name BE state usb-ver BE-path */ 
-            printf("%-3s %-4s %-3s %-5s %-7s  %-30s\n",
-                    "Idx", "name", "BE", "state", "usb-ver", "BE-path");
+            printf("%-3s %-5s %-3s %-5s %-7s  %-30s\n",
+                    "Idx", "type", "BE", "state", "usb-ver", "BE-path");
     
             if (!libxl_device_usbctrl_getinfo(ctx, domid, 
                                     &usbctrls[i], &usbctrlinfo)) {
                 /* */
-                printf("%-3d %-3d %-5d %-7d %-30s\n",
-                        i, usbctrlinfo.backend_id,
+                printf("%-3d %-5s %-3d %-5d %-7d %-30s\n",
+                        i, usbctrlinfo.type, usbctrlinfo.backend_id,
                         usbctrlinfo.state, usbctrlinfo.version,
                         usbctrlinfo.backend );
-                // waste memory, need improvement
-                for(j = 0; j < usbctrlinfo.num_ports; ++j) {
-                    /* 
-                    if (!libxl_device_usb_getinfo(ctx, domid, 
-                                        &usbctrls[i], &usbinfo)) {
-                        printf("port %d: %d %d %d:%d %s %s\n", j, 
-                            usbinfo.bus,usbinfo.dev, usbinfo.idVendor, 
-                            usbinfo.idProd, usbinfo.manuf, usbinfo.prod);
-                    }
-                    libxl_usbinfo_dispose(&usbinfo);
-                    */
-                }
+
+                usbs = libxl_device_usb_list(ctx, domid, usbctrlinfo.devid, &numusb);
+                usbinfo_print(usbs, numusb);
+
                 libxl_usbctrlinfo_dispose(&usbctrlinfo);
             }
             libxl_device_usbctrl_dispose(&usbctrls[i]); 

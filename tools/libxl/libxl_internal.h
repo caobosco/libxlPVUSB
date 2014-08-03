@@ -2279,10 +2279,11 @@ _hidden void libxl__device_vtpm_add(libxl__egc *egc, uint32_t domid,
                                    libxl__ao_device *aodev);
 
 /* from libxl_usb */
-_hidden int libxl__device_usbctrl_add(libxl__egc *egc, uint32_t domid,
+_hidden int libxl__device_usbctrl_add(libxl__gc *gc, libxl__egc *egc, uint32_t domid,
                             libxl_device_usbctrl *usbctrl, libxl__ao_device *aodev);
 _hidden int libxl__device_usb_add(libxl__gc *gc, uint32_t domid, libxl_device_usb *usb);
 _hidden int libxl__device_usb_destroy_all(libxl__gc *gc, uint32_t domid);
+_hidden int libxl__device_usb_assigned_list(libxl__gc *gc, libxl_device_usb **list, int *num);
 
 /* Internal function to connect a vkb device */
 _hidden int libxl__device_vkb_add(libxl__gc *gc, uint32_t domid,
