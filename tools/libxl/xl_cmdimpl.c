@@ -701,7 +701,7 @@ static void parse_config_data(const char *config_source,
     const char *buf;
     long l;
     XLU_Config *config;
-    XLU_ConfigList *cpus, *vbds, *nics, *pcis, *cvfbs, *cpuids, *vtpms;
+    XLU_ConfigList *cpus, *vbds, *nics, *pcis, *usbs, *cvfbs, *cpuids, *vtpms;
     XLU_ConfigList *ioports, *irqs, *iomem;
     int num_ioports, num_irqs, num_iomem;
     int pci_power_mgmt = 0;
@@ -1458,6 +1458,44 @@ skip_vfb:
         }
         if (d_config->num_pcidevs && c_info->type == LIBXL_DOMAIN_TYPE_PV)
             libxl_defbool_set(&b_info->u.pv.e820_host, true);
+    }
+
+    if (!xlu_cfg_get_list (config, "usb", &usbs, 0, 0) ) {
+        d_config->num_usbs = 0;
+        d_config->usbs = NULL;
+        while ((buf = xlu_cfg_get_listitem (usbs, d_config->num_usbs)) != NULL) {
+            libxl_device_usb *usb;
+            char *buf2 = strdup(buf);
+            char *p, *p2;
+    
+            d_config->usbs = (libxl_device_usb *) realloc(d_config->usbs, 
+                                sizeof (libxl_device_usb) * (d_config->num_usbs+1));
+            usb = d_config->usbs + d_config->num_usbs;
+            libxl_device_usb_init(usb);
+
+            p = strtok(buf2, ",");
+            if(p) {
+                usb->port = -1;
+                usb->ctrl = -1;
+                do {
+                    while(*p == ' ')
+                        ++p;
+                    if ((p2 = strchr(p, '=')) == NULL)
+                     break;
+                    *p2 = '\0';
+                    if (!strcmp(p, "type")) {
+                        //Set type in libxl_device_usb
+                    } else if (!strcmp(p, "interface") ){
+                        usb->intf = strdup(p2 + 1);
+                    } else {
+                        fprintf(stderr, "Unknown string `%s' in usb spec\n", p);
+                        exit(1);
+                    }
+                } while ((p = strtok(NULL, ",")) != NULL);
+            }
+            free(buf2);
+            d_config->num_usbs++;
+        }
     }
 
     switch (xlu_cfg_get_list(config, "cpuid", &cpuids, 0, 1)) {
@@ -2740,7 +2778,7 @@ static void usbinfo_print(libxl_device_usb *usbs, int num) {
          return;
     libxl_usbinfo usbinfo;
     for (i = 0; i < num; i++) {
-        //TO BE Improved 
+        /* TO BE Improved */
         if (usbs[i].port )
             printf("Port %d:", usbs[i].port);
         printf("Interface %8s ", usbs[i].intf);
@@ -2778,7 +2816,6 @@ int main_usbassignable_list(int argc, char **argv)
     return 0;   
 }
 
-//read xenstore
 static void usb_assigned_list(void)
 {
     libxl_device_usb *usbs;
@@ -2786,8 +2823,6 @@ static void usb_assigned_list(void)
     usbs = libxl_device_usb_assigned_list(ctx, &num);
     
     usbinfo_print(usbs, num);
-        // usbs[i] changed, why !!!???
-        //libxl_device_usb_dispose(&usbs[i]);
     free(usbs);
 }
 
@@ -2802,7 +2837,6 @@ int main_usbassigned_list(int argc, char **argv)
     return 0;
 }
 
-//xenstore
 int main_usbctrl_attach(int argc, char **argv)
 {
     uint32_t domid;
@@ -2818,7 +2852,6 @@ int main_usbctrl_attach(int argc, char **argv)
     
     libxl_device_usbctrl_init(&usbctrl);
     
-    //parse parameters
     for (argv += optind+1, argc -= optind+1; argc > 0; ++argv, --argc) {
         if (MATCH_OPTION("name", *argv, oparg)) {
             replace_string(&usbctrl.name, oparg);
@@ -2832,7 +2865,6 @@ int main_usbctrl_attach(int argc, char **argv)
                 return 1;
             }
         } else if (MATCH_OPTION("version", *argv, oparg)) {
-            //how to convert string to uint_8??
             usbctrl.usb_version = atoi(oparg);
         } else if (MATCH_OPTION("num_ports", *argv, oparg)) {
             usbctrl.num_ports = atoi(oparg);
@@ -2842,7 +2874,7 @@ int main_usbctrl_attach(int argc, char **argv)
         }
     }
 
-    if(dryrun_only) {
+    if (dryrun_only) {
        char* json = libxl_device_usbctrl_to_json(ctx, &usbctrl);
        printf("usb controller: %s\n", json);
        free(json);
@@ -2851,7 +2883,7 @@ int main_usbctrl_attach(int argc, char **argv)
        return 0;
     }
     
-    if(libxl_device_usbctrl_add(ctx, domid, &usbctrl, 0)) {
+    if (libxl_device_usbctrl_add(ctx, domid, &usbctrl, 0)) {
         fprintf(stderr, "libxl_device_usbctrl_add failed.\n");
         return 1;
     }
@@ -2873,7 +2905,6 @@ int main_usbctrl_detach(int argc, char **argv)
 
     libxl_device_usbctrl_init(&usbctrl);
 
-    //parse parameters
     if (libxl_devid_to_device_usbctrl(ctx, domid, atoi(argv[optind+1]), &usbctrl)) {
         fprintf(stderr, "Unknown device %s.\n", argv[optind+1]);
         return 1;
@@ -2902,16 +2933,13 @@ int main_usbattach(int argc, char **argv)
 
     libxl_device_usb_init(&usb);
     
-    //indicate that no ctrl, port are specified 
+    /* set default value for usb.ctrl and usb.port */
     usb.ctrl = -1, usb.port = -1;
-
-    //parse the parameters
     for (argv += optind+1, argc -= optind+1; argc > 0; ++argv, --argc) {
         if (MATCH_OPTION("controller", *argv, oparg)) {
             usb.ctrl = atoi(oparg);
         } else if (MATCH_OPTION("hostdev", *argv, oparg)) {
-            //how to convert????
-            //replace_string(&usb.hostdev, oparg);
+            /* TO-DO: convert the "lsusb" bus:addr to the sysfs usb address */
         } else if (MATCH_OPTION("intf", *argv, oparg)) {
             replace_string(&usb.intf, oparg);
         } else if (MATCH_OPTION("port", *argv, oparg)) {
@@ -2932,7 +2960,7 @@ int main_usbattach(int argc, char **argv)
         return 0;
     }
     
-    if(libxl_device_usb_add(ctx, domid, &usb, 0)) {
+    if (libxl_device_usb_add(ctx, domid, &usb, 0)) {
         fprintf(stderr, "libxl_device_usb_add failed.\n");
         return 1;
     }
@@ -2956,7 +2984,6 @@ int main_usbdetach(int argc, char **argv)
 
     libxl_device_usb_init(&usb);
 
-    //parse the parameters
     for (argv += optind+1, argc -= optind+1; argc > 0; ++argv, --argc) {
         if (MATCH_OPTION("controller", *argv, oparg)) {
             usb.ctrl = atoi(oparg);
@@ -2969,22 +2996,13 @@ int main_usbdetach(int argc, char **argv)
             return 1;
         }
     }
-/*
-    if (strchr(argv[optind+1], '-')) {
-        if (libxl_hostdev_to_device_usb(ctx, domid, atoi(argv[optind+1]), &usb)) {
-            fprintf(stderr, "Unknown device %s.\n", argv[optind+1]);
-            return 1;
-        }
-    } else {
-        if (libxl_intf_to_device_usb(ctx, domid, argv[optind+1], &usb)) {
-           fprintf(stderr, "Unknown device %s.\n", argv[optind+1]);
-            return 1;
-        }
-    }
-*/
-    libxl_intf_to_device_usb(ctx, domid,usb.intf, &usb);
 
-    if(libxl_device_usb_remove(ctx, domid, &usb, 0)) {
+    if (libxl_intf_to_device_usb(ctx, domid, usb.intf, &usb) ) {
+        fprintf(stderr, "libxl_intf_to_device_usb failed.\n");
+        return 1;
+    }
+
+    if (libxl_device_usb_remove(ctx, domid, &usb, 0) ) {
         fprintf(stderr, "libxl_device_usb_remove failed.\n");
         return 1;
     }
@@ -2992,7 +3010,6 @@ int main_usbdetach(int argc, char **argv)
     return 0;
 }
 
-//xenstore
 int main_usblist(int argc, char **argv)
 {
     uint32_t domid;
@@ -3005,7 +3022,6 @@ int main_usblist(int argc, char **argv)
         /* No options */
     }
 
-    //processing for each domid
     for (argv += optind, argc -= optind; argc > 0; --argc, ++argv) {
         domid = find_domain(*argv);
         usbctrls = libxl_device_usbctrl_list(ctx, domid, &numctrl);
@@ -3013,13 +3029,12 @@ int main_usblist(int argc, char **argv)
             continue;
         }
         for (i = 0; i < numctrl; ++i) {
-            /* Idx  name BE state usb-ver BE-path */ 
+            /* Idx  type BE state usb-ver BE-path */ 
             printf("%-3s %-5s %-3s %-5s %-7s  %-30s\n",
                     "Idx", "type", "BE", "state", "usb-ver", "BE-path");
     
             if (!libxl_device_usbctrl_getinfo(ctx, domid, 
                                     &usbctrls[i], &usbctrlinfo)) {
-                /* */
                 printf("%-3d %-5s %-3d %-5d %-7d %-30s\n",
                         i, usbctrlinfo.type, usbctrlinfo.backend_id,
                         usbctrlinfo.state, usbctrlinfo.version,

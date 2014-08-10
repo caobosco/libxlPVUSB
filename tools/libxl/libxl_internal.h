@@ -1064,8 +1064,6 @@ _hidden int libxl__device_vkb_setdefault(libxl__gc *gc, libxl_device_vkb *vkb);
 _hidden int libxl__device_pci_setdefault(libxl__gc *gc, libxl_device_pci *pci);
 _hidden int libxl__device_usbctrl_setdefault(libxl__gc *gc, 
                                     libxl_device_usbctrl *usbctrl, uint32_t domid);
-_hidden int libxl__device_usb_setdefault(libxl__gc *gc, libxl_device_usb *usb,
-                                         uint32_t domid);
 
 _hidden const char *libxl__device_nic_devname(libxl__gc *gc,
                                               uint32_t domid,
@@ -2279,11 +2277,16 @@ _hidden void libxl__device_vtpm_add(libxl__egc *egc, uint32_t domid,
                                    libxl__ao_device *aodev);
 
 /* from libxl_usb */
-_hidden int libxl__device_usbctrl_add(libxl__gc *gc, libxl__egc *egc, uint32_t domid,
-                            libxl_device_usbctrl *usbctrl, libxl__ao_device *aodev);
-_hidden int libxl__device_usb_add(libxl__gc *gc, uint32_t domid, libxl_device_usb *usb);
+_hidden int libxl__device_usbctrl_add(libxl__gc *gc, uint32_t domid,
+                            libxl_device_usbctrl *usbctrl);
+_hidden int libxl__device_usb_add(libxl__gc *gc, uint32_t domid, 
+                            libxl_device_usb *usb);
 _hidden int libxl__device_usb_destroy_all(libxl__gc *gc, uint32_t domid);
 _hidden int libxl__device_usb_assigned_list(libxl__gc *gc, libxl_device_usb **list, int *num);
+_hidden int libxl__device_usb_list(libxl__gc *gc, uint32_t domid, 
+                                libxl_device_usb **usbs, int usbctrl, int *num);
+_hidden libxl_device_usb *libxl_device_usb_list_all(libxl__gc *gc, uint32_t domid, int *num);
+_hidden int libxl__device_usb_setdefault(libxl__gc *gc, uint32_t domid, libxl_device_usb *usb);
 
 /* Internal function to connect a vkb device */
 _hidden int libxl__device_vkb_add(libxl__gc *gc, uint32_t domid,
@@ -2723,6 +2726,10 @@ _hidden void libxl__add_nics(libxl__egc *egc, libxl__ao *ao, uint32_t domid,
                              libxl__multidev *multidev);
 
 _hidden void libxl__add_vtpms(libxl__egc *egc, libxl__ao *ao, uint32_t domid,
+                             libxl_domain_config *d_config,
+                             libxl__multidev *multidev);
+
+_hidden void libxl__add_usbs(libxl__egc *egc, libxl__ao *ao, uint32_t domid,
                              libxl_domain_config *d_config,
                              libxl__multidev *multidev);
 

@@ -1000,9 +1000,6 @@ int libxl_device_usb_destroy(libxl_ctx *ctx, uint32_t domid, libxl_device_usb *u
 libxl_device_usb *libxl_device_usb_list(libxl_ctx *ctx, uint32_t domid,
                                         int usbctrl, int *num);
 
-libxl_device_usb *libxl_device_usb_list_all(libxl_ctx *ctx, uint32_t domid,
-                                        int *num);
-
 int libxl_devid_to_device_usb(libxl_ctx *ctx, uint32_t domid,
                                int devid, libxl_device_usb *usb)
                             LIBXL_EXTERNAL_CALLERS_ONLY;

@@ -1434,6 +1434,8 @@ void libxl__destroy_domid(libxl__egc *egc, libxl__destroy_domid_state *dis)
 
     if (libxl__device_pci_destroy_all(gc, domid) < 0)
         LIBXL__LOG(ctx, LIBXL__LOG_ERROR, "pci shutdown failed for domid %d", domid);
+    if (libxl__device_usb_destroy_all(gc, domid) < 0)
+         LIBXL__LOG(ctx, LIBXL__LOG_ERROR, "usb shutdown failed for domid %d", domid);
     rc = xc_domain_pause(ctx->xch, domid);
     if (rc < 0) {
         LIBXL__LOG_ERRNOVAL(ctx, LIBXL__LOG_ERROR, rc, "xc_domain_pause failed for %d", domid);
