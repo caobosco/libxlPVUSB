@@ -685,6 +685,8 @@ static void domcreate_launch_dm(libxl__egc *egc, libxl__multidev *aodevs,
 
 static void domcreate_attach_vtpms(libxl__egc *egc, libxl__multidev *multidev,
                                    int ret);
+static void domcreate_attach_usbs(libxl__egc *egc, libxl__multidev *multidev,
+                                   int ret);
 static void domcreate_attach_pci(libxl__egc *egc, libxl__multidev *aodevs,
                                  int ret);
 
@@ -1239,14 +1241,47 @@ static void domcreate_attach_vtpms(libxl__egc *egc,
    if (d_config->num_vtpms > 0) {
        /* Attach vtpms */
        libxl__multidev_begin(ao, &dcs->multidev);
-       dcs->multidev.callback = domcreate_attach_pci;
+       dcs->multidev.callback = domcreate_attach_usbs;
        libxl__add_vtpms(egc, ao, domid, d_config, &dcs->multidev);
        libxl__multidev_prepared(egc, &dcs->multidev, 0);
        return;
    }
 
-   domcreate_attach_pci(egc, multidev, 0);
+   domcreate_attach_usbs(egc, multidev, 0);
    return;
+
+error_out:
+   assert(ret);
+   domcreate_complete(egc, dcs, ret);
+}
+
+static void domcreate_attach_usbs(libxl__egc *egc, libxl__multidev *multidev,
+                                int ret)
+{
+    libxl__domain_create_state *dcs = CONTAINER_OF(multidev, *dcs, multidev);
+    STATE_AO_GC(dcs->ao);
+    int i;
+    libxl_ctx *ctx = CTX;
+    int domid = dcs->guest_domid;
+    
+    libxl_domain_config *const d_config = dcs->guest_config;
+    
+    if (ret) {
+        LOG(ERROR, "unable to add vtpm devices");
+        goto error_out;
+    }
+    
+    for (i = 0; i < d_config->num_usbs; i++) {
+        ret = libxl__device_usb_add(gc, domid, &d_config->usbs[i]);
+        if (ret < 0) {
+            LIBXL__LOG(ctx, LIBXL__LOG_ERROR,
+                       "libxl__device_usb_add failed: %d", ret);
+            goto error_out;
+        }
+    }
+    
+    domcreate_attach_pci(egc, multidev, 0);
+    return;
 
 error_out:
    assert(ret);
@@ -1266,7 +1301,7 @@ static void domcreate_attach_pci(libxl__egc *egc, libxl__multidev *multidev,
     libxl_domain_config *const d_config = dcs->guest_config;
 
     if (ret) {
-        LOG(ERROR, "unable to add vtpm devices");
+        LOG(ERROR, "unable to add usb devices");
         goto error_out;
     }
 

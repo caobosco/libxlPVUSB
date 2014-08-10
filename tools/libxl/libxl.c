@@ -1434,6 +1434,8 @@ void libxl__destroy_domid(libxl__egc *egc, libxl__destroy_domid_state *dis)
 
     if (libxl__device_pci_destroy_all(gc, domid) < 0)
         LIBXL__LOG(ctx, LIBXL__LOG_ERROR, "pci shutdown failed for domid %d", domid);
+    if (libxl__device_usb_destroy_all(gc, domid) < 0)
+         LIBXL__LOG(ctx, LIBXL__LOG_ERROR, "usb shutdown failed for domid %d", domid);
     rc = xc_domain_pause(ctx->xch, domid);
     if (rc < 0) {
         LIBXL__LOG_ERRNOVAL(ctx, LIBXL__LOG_ERROR, rc, "xc_domain_pause failed for %d", domid);
@@ -1734,7 +1736,7 @@ out:
 /******************************************************************************/
 
 /* generic callback for devices that only need to set ao_complete */
-static void device_addrm_aocomplete(libxl__egc *egc, libxl__ao_device *aodev)
+void device_addrm_aocomplete(libxl__egc *egc, libxl__ao_device *aodev)
 {
     STATE_AO_GC(aodev->ao);
 
@@ -1757,7 +1759,7 @@ out:
 }
 
 /* common function to get next device id */
-static int libxl__device_nextid(libxl__gc *gc, uint32_t domid, char *device)
+int libxl__device_nextid(libxl__gc *gc, uint32_t domid, char *device)
 {
     char *dompath, **l;
     unsigned int nb;
@@ -1776,7 +1778,7 @@ static int libxl__device_nextid(libxl__gc *gc, uint32_t domid, char *device)
     return nextid;
 }
 
-static int libxl__resolve_domid(libxl__gc *gc, const char *name,
+int libxl__resolve_domid(libxl__gc *gc, const char *name,
                                 uint32_t *domid)
 {
     if (!name)
