@@ -290,9 +290,9 @@ static int libxl__device_usbctrl_remove_common(libxl_ctx *ctx, uint32_t domid,
         libxl__prepare_ao_device(ao, aodev);
         aodev->action = LIBXL__DEVICE_ACTION_REMOVE; 
         aodev->dev = device;
-        aodev->callback = device_addrm_aocomplete;
         aodev->force = force;
         libxl__initiate_device_remove(egc, aodev);
+        libxl__ao_complete(egc, ao, rc);
         break;
     default:
         abort();

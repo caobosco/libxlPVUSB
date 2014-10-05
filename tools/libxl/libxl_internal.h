@@ -2155,8 +2155,6 @@ struct libxl__ao_device {
 
 /* Starts preparing to add/remove a bunch of devices. */
 _hidden void libxl__multidev_begin(libxl__ao *ao, libxl__multidev*);
-/* generic callback for devices that only need to set ao_complete */
-_hidden void device_addrm_aocomplete(libxl__egc *egc, libxl__ao_device *aodev);
 
 /* Prepares to add/remove one of many devices.  Returns a libxl__ao_device
  * which has had libxl__prepare_ao_device called, and which has also

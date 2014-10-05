@@ -1194,6 +1194,45 @@ List virtual network interfaces for a domain.
 
 =back
 
+=head2 USB DEVICES
+
+=over 4
+
+=item B<usb-assginable-list>
+
+List all the assignable USB devices.
+
+=item B<usb-assigned-list>
+
+List all the USB devices that has been assigned.
+
+=item B<usb-controller-create> I<usb-version> I<number_of_ports> [I<controller_type>]
+
+Creates a new usb virtual controller for the domain specified by I<domain-id>.
+I<usb-version> describes the version of USB controller to create, i.e., 1, 2 or 3, 
+I<number_of_ports> describers the number of ports in the USB virtual controller, and 
+I<controller_type> describes the type of USB controller, PVUSB or EMULATED.
+
+=item B<usb-controller-destroy> I<domain-id> I<controller-name>
+
+Destroies the virtual USB controller specified by I<controller-name> in I<domain-id>.
+
+=item B<usb-attach> I<domain-id> I<hostbus.hostaddr> [I<controller-name>]
+
+Attaches USB device specified by I<hostbus.hostaddr> to USB controller specified by 
+I<controller-name> in domain I<domain-id>.
+
+=item B<usb-detach> I<domain-id>  I<hostbus.hostaddr>
+
+Detaches the USB device I<hostbus.hostaddr> in domain I<domain-id>.
+
+=item B<usb-list> I<domain-id>
+
+List all the virtual USB controllers and USB devices for the domain 
+specified by I<domain-id>.
+
+= back
+
 =head2 VTPM DEVICES
 
 =over 4
